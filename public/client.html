@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RadioDNS Hybrid Visualizer</title>
+  <!-- Google Fonts: Outfit & Space Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Mono&display=swap" rel="stylesheet">
+  <!-- MQTT.js Browser Client -->
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #090d16 0%, #111827 100%);
+      --card-bg: rgba(30, 41, 59, 0.45);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --glow-color: rgba(99, 102, 241, 0.15);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    header {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 1.25rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      background: linear-gradient(to right, #818cf8, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.025em;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: rgba(15, 23, 42, 0.8);
+      padding: 0.5rem 1rem;
+      border-radius: 9999px;
+      border: 1px solid var(--card-border);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--danger);
+      box-shadow: 0 0 8px var(--danger);
+    }
+
+    .status-dot.connected {
+      background-color: var(--success);
+      box-shadow: 0 0 10px var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.connecting {
+      background-color: var(--warning);
+      box-shadow: 0 0 10px var(--warning);
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: 1.5rem;
+      padding: 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .sidebar-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .card h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--text-main);
+      border-left: 3px solid var(--primary);
+      padding-left: 0.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    select, input {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: var(--text-main);
+      padding: 0.75rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    select:focus, input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--glow-color);
+    }
+
+    .btn {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .profiles-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .profile-btn {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: var(--text-main);
+      padding: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .profile-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .profile-btn:hover:not(.active) {
+      background: rgba(51, 65, 85, 0.8);
+    }
+
+    .info-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      font-size: 0.85rem;
+    }
+
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 0.5rem;
+    }
+
+    .info-item:last-child {
+      border: none;
+      padding: 0;
+    }
+
+    .info-item span:first-child {
+      color: var(--text-muted);
+    }
+
+    .info-item span:last-child {
+      font-weight: 600;
+      text-align: right;
+    }
+
+    /* Receiver Screen Styles */
+    .receiver-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .screen-bezel {
+      background: #0f172a;
+      border: 6px solid #334155;
+      border-radius: 24px;
+      padding: 1.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(99, 102, 241, 0.1);
+      display: flex;
+      flex-direction: column;
+      aspect-ratio: 16 / 10;
+      max-height: 580px;
+      width: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .screen-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    .screen-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 1.5rem;
+      min-height: 0;
+    }
+
+    @media (max-width: 768px) {
+      .screen-grid {
+        grid-template-columns: 1fr;
+      }
+      .screen-metadata {
+        display: none !important;
+      }
+    }
+
+    .slide-viewer {
+      background: #020617;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .slide-image {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    .slide-image.loaded {
+      opacity: 1;
+    }
+
+    .slide-placeholder {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      color: #334155;
+      text-align: center;
+      transition: opacity 0.3s;
+    }
+
+    .slide-placeholder svg {
+      width: 64px;
+      height: 64px;
+      stroke: #334155;
+    }
+
+    .slide-placeholder span {
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .screen-metadata {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 12px;
+      padding: 1.25rem;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .meta-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+      letter-spacing: 0.05em;
+    }
+
+    .meta-value {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 1.25rem;
+      line-height: 1.3;
+    }
+
+    .meta-client {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #818cf8;
+      margin-bottom: 1.25rem;
+    }
+
+    .timer-container {
+      margin-top: auto;
+    }
+
+    .timer-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(to right, var(--primary), #c084fc);
+      border-radius: 9999px;
+      transition: width 1s linear;
+    }
+
+    /* Ticker Text Styles */
+    .screen-footer {
+      margin-top: 1rem;
+      background: #020617;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .ticker-label {
+      font-size: 0.75rem;
+      font-weight: 800;
+      background: var(--primary);
+      color: white;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      z-index: 2;
+    }
+
+    .ticker-container {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .ticker-text {
+      white-space: nowrap;
+      display: inline-block;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #38bdf8;
+      padding-left: 100%;
+      animation: marquee 20s linear infinite;
+    }
+
+    @keyframes marquee {
+      0% { transform: translate3d(0, 0, 0); }
+      100% { transform: translate3d(-100%, 0, 0); }
+    }
+
+    /* Logs Terminal Styles */
+    .logs-panel {
+      grid-column: 1 / -1;
+    }
+
+    .terminal-body {
+      background: #020617;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1rem;
+      height: 200px;
+      overflow-y: auto;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .log-line {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .log-time {
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .log-content {
+      word-break: break-all;
+    }
+
+    .log-info { color: #38bdf8; }
+    .log-success { color: var(--success); }
+    .log-warn { color: var(--warning); }
+    .log-error { color: var(--danger); }
+    .log-mqtt { color: #c084fc; }
+
+    /* Footer styling */
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--card-border);
+      background: rgba(15, 23, 42, 0.4);
+      margin-top: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>RadioDNS Hybrid Visualizer</h1>
+    <div class="status-badge">
+      <div id="mqtt-status-dot" class="status-dot"></div>
+      <span id="mqtt-status-text">Desconectado</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="sidebar-panel">
+      <!-- Simulación de Perfiles -->
+      <div class="card">
+        <h2>Simulación de Ubicación</h2>
+        <div class="profiles-grid">
+          <button class="profile-btn active" onclick="selectProfile('bogota', '186.28.232.10')">Bogotá</button>
+          <button class="profile-btn" onclick="selectProfile('medellin', '201.184.130.194')">Medellín</button>
+          <button class="profile-btn" onclick="selectProfile('nacional', '8.8.8.8')">Nacional</button>
+        </div>
+        <div class="form-group">
+          <label for="ip-input">IP de Simulación</label>
+          <input type="text" id="ip-input" value="186.28.232.10">
+        </div>
+        <div class="form-group">
+          <label for="station-id">ID Emisora (Service ID)</label>
+          <input type="text" id="station-id" value="emisora_colombia">
+        </div>
+        <button class="btn" id="connect-btn" onclick="startRadioDnsFlow()">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Conectar a RadioDNS
+        </button>
+      </div>
+
+      <!-- Configuración de Conexión Broker -->
+      <div class="card">
+        <h2>Conexión MQTT WebSockets</h2>
+        <div class="form-group">
+          <label for="mqtt-ws-url">URL Broker WebSockets</label>
+          <input type="text" id="mqtt-ws-url" value="ws://localhost:9001">
+        </div>
+        <div class="info-list">
+          <div class="info-item">
+            <span>Región Detectada</span>
+            <span id="info-region">-</span>
+          </div>
+          <div class="info-item">
+            <span>Servicio (XML)</span>
+            <span id="info-service">-</span>
+          </div>
+          <div class="info-item">
+            <span>Topic Imagen</span>
+            <span id="info-topic-img">-</span>
+          </div>
+          <div class="info-item">
+            <span>Topic Texto</span>
+            <span id="info-topic-text">-</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="receiver-container">
+      <!-- Pantalla Visualizadora Bezel -->
+      <div class="screen-bezel">
+        <div class="screen-header">
+          <span id="screen-station-name">RADIO HÍBRIDA</span>
+          <span id="screen-local-time">12:00 PM</span>
+        </div>
+
+        <div class="screen-grid">
+          <!-- Visor de Slide -->
+          <div class="slide-viewer" id="slide-container">
+            <div class="slide-placeholder" id="placeholder-box">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span>Esperando Diapositiva (SLIDE)</span>
+            </div>
+            <img class="slide-image" id="active-slide" alt="RadioVIS Slide">
+          </div>
+
+          <!-- Metadatos de la Pauta -->
+          <div class="screen-metadata">
+            <div>
+              <div class="meta-title">Campaña Activa</div>
+              <div class="meta-value" id="campaign-title">Sin Pauta Comercial</div>
+
+              <div class="meta-title">Anunciante</div>
+              <div class="meta-client" id="campaign-client">Estación Local</div>
+            </div>
+
+            <!-- Timer / Progress Bar -->
+            <div class="timer-container">
+              <div class="timer-header">
+                <span>Tiempo Comercial</span>
+                <span id="timer-countdown">0s</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="timer-progress"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer / Ticker Scrolling -->
+        <div class="screen-footer">
+          <span class="ticker-label">RDS</span>
+          <div class="ticker-container">
+            <span class="ticker-text" id="active-text">Sintonizando emisora híbrida - Geolocalizada por RadioDNS...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logs de Red en vivo -->
+      <div class="card logs-panel">
+        <h2>Logs de Transmisión en Tiempo Real</h2>
+        <div class="terminal-body" id="logs-terminal">
+          <!-- Se inyectarán dinámicamente -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    RadioDNS Middleware - Visualizador de Pauta Segmentada &copy; 2026
+  </footer>
+
+  <script>
+    let mqttClient = null;
+    let countdownInterval = null;
+    let statusPollInterval = null;
+    let timerTotal = 0;
+    let timerRemaining = 0;
+
+    // Actualizar reloj local en pantalla
+    setInterval(() => {
+      const now = new Date();
+      document.getElementById('screen-local-time').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }, 1000);
+
+    // Selección rápida de Perfil
+    function selectProfile(profile, ip) {
+      document.querySelectorAll('.profile-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('ip-input').value = ip;
+      addLog(`Perfil simulado cambiado a: ${profile.toUpperCase()} (${ip})`, 'info');
+    }
+
+    // Escribir en la Consola / Logs
+    function addLog(message, type = 'info') {
+      const terminal = document.getElementById('logs-terminal');
+      const timeStr = new Date().toLocaleTimeString([], { hour12: false });
+      
+      const line = document.createElement('div');
+      line.className = 'log-line';
+      line.innerHTML = `
+        <span class="log-time">[${timeStr}]</span>
+        <span class="log-content log-${type}">${message}</span>
+      `;
+      
+      terminal.appendChild(line);
+      terminal.scrollTop = terminal.scrollHeight;
+
+      // Limitar logs a 100 líneas
+      while (terminal.childElementCount > 100) {
+        terminal.removeChild(terminal.firstChild);
+      }
+    }
+
+    // Actualizar Estado MQTT (Visual)
+    function updateMqttStatus(status) {
+      const dot = document.getElementById('mqtt-status-dot');
+      const txt = document.getElementById('mqtt-status-text');
+      
+      dot.className = 'status-dot';
+      
+      if (status === 'connected') {
+        dot.classList.add('connected');
+        txt.textContent = 'Conectado';
+        txt.style.color = 'var(--success)';
+      } else if (status === 'connecting') {
+        dot.classList.add('connecting');
+        txt.textContent = 'Conectando';
+        txt.style.color = 'var(--warning)';
+      } else {
+        txt.textContent = 'Desconectado';
+        txt.style.color = 'var(--danger)';
+      }
+    }
+
+    // Iniciar Flujo RadioDNS
+    async function startRadioDnsFlow() {
+      const simulatedIp = document.getElementById('ip-input').value.trim();
+      const serviceId = document.getElementById('station-id').value.trim();
+      const brokerWsUrl = document.getElementById('mqtt-ws-url').value.trim();
+
+      if (!simulatedIp || !serviceId) {
+        alert('Por favor, ingresa una IP y un ID de Emisora válidos.');
+        return;
+      }
+
+      // Desconectar cliente previo si existe
+      if (mqttClient) {
+        addLog('Cerrando conexión MQTT previa...', 'info');
+        mqttClient.end();
+        mqttClient = null;
+      }
+
+      clearInterval(countdownInterval);
+      clearInterval(statusPollInterval);
+      resetScreen();
+
+      addLog(`1. Solicitando información SPI para servicio: ${serviceId}...`, 'info');
+      
+      try {
+        // Consultar el endpoint XML enviando la IP simulada en el header
+        const response = await fetch(`http://localhost:3000/spi/${serviceId}/service-information.xml`, {
+          headers: {
+            'X-Forwarded-For': simulatedIp
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status} - No se pudo descargar el XML`);
+        }
+
+        const xmlText = await response.text();
+        addLog(`SPI XML recibido correctamente.`, 'success');
+
+        // Parsear el XML
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
+        
+        const longName = xmlDoc.querySelector('longName').textContent;
+        const shortName = xmlDoc.querySelector('shortName').textContent;
+        const linkElement = xmlDoc.querySelector('link');
+        const linkUri = linkElement ? linkElement.getAttribute('uri') : '';
+
+        addLog(`SPI: Servicio sintonizado: ${longName}`, 'success');
+        document.getElementById('screen-station-name').textContent = longName;
+        document.getElementById('info-service').textContent = `${shortName} / ${longName}`;
+
+        if (!linkUri) {
+          throw new Error('El XML no contiene ningún enlace (link uri) a un Broker MQTT.');
+        }
+
+        addLog(`URI MQTT extraído del XML: ${linkUri}`, 'info');
+
+        // Extraer los tópicos regionales y el host
+        // Formato esperado: mqtt://localhost:1883/emisora_colombia/region/bogota
+        const uriParts = linkUri.replace('mqtt://', '').split('/');
+        const hostPort = uriParts[0];
+        const host = hostPort.split(':')[0];
+        const topicPrefix = uriParts.slice(1).join('/');
+
+        const regionName = topicPrefix.split('/').pop();
+        document.getElementById('info-region').textContent = regionName.toUpperCase();
+
+        const imgTopic = `${topicPrefix}/image`;
+        const textTopic = `${topicPrefix}/text`;
+
+        document.getElementById('info-topic-img').textContent = imgTopic;
+        document.getElementById('info-topic-text').textContent = textTopic;
+
+        // 2. Conectarse al Broker MQTT por WebSockets
+        addLog(`2. Conectando al broker MQTT WebSockets en ${brokerWsUrl}...`, 'info');
+        updateMqttStatus('connecting');
+
+        mqttClient = mqtt.connect(brokerWsUrl, {
+          clientId: `radiodns_client_${Math.random().toString(16).substring(2, 8)}`,
+          clean: true,
+          reconnectPeriod: 5000
+        });
+
+        mqttClient.on('connect', () => {
+          addLog(`MQTT WebSockets conectado con éxito.`, 'success');
+          updateMqttStatus('connected');
+
+          // Suscribirse a los tópicos regionales
+          addLog(`Suscribiéndose a topic imágenes: ${imgTopic}`, 'mqtt');
+          mqttClient.subscribe(imgTopic, { qos: 1 });
+
+          addLog(`Suscribiéndose a topic textos: ${textTopic}`, 'mqtt');
+          mqttClient.subscribe(textTopic, { qos: 1 });
+
+          // Cargar el estado inicial inmediatamente
+          pollActiveCampaignStatus(serviceId);
+          // Iniciar polling regular del estado en caché
+          statusPollInterval = setInterval(() => pollActiveCampaignStatus(serviceId), 4000);
+        });
+
+        mqttClient.on('message', (topic, message) => {
+          const payload = message.toString();
+          addLog(`MQTT [Mensaje recibido] Topic: ${topic} => Payload: ${payload}`, 'mqtt');
+
+          if (topic === imgTopic) {
+            if (payload.startsWith('SHOW ')) {
+              const url = payload.substring(5);
+              updateSlide(url);
+            }
+          } else if (topic === textTopic) {
+            if (payload.startsWith('TEXT ')) {
+              const text = payload.substring(5);
+              updateText(text);
+            }
+          }
+        });
+
+        mqttClient.on('error', (err) => {
+          addLog(`Error en conexión MQTT: ${err.message}`, 'error');
+          updateMqttStatus('disconnected');
+        });
+
+        mqttClient.on('close', () => {
+          addLog(`Conexión con Broker MQTT cerrada.`, 'warn');
+          updateMqttStatus('disconnected');
+        });
+
+      } catch (err) {
+        addLog(`Error en el flujo RadioDNS: ${err.message}`, 'error');
+        updateMqttStatus('disconnected');
+        alert(`Error al conectar: ${err.message}`);
+      }
+    }
+
+    // Actualizar imagen del slide
+    function updateSlide(url) {
+      const img = document.getElementById('active-slide');
+      const placeholder = document.getElementById('placeholder-box');
+
+      placeholder.style.opacity = '0';
+      img.classList.remove('loaded');
+      
+      // Esperar que transicione a transparente
+      setTimeout(() => {
+        img.src = url;
+        img.onload = () => {
+          img.classList.add('loaded');
+          placeholder.style.display = 'none';
+        };
+      }, 300);
+    }
+
+    // Actualizar Texto (RDS scrolling)
+    function updateText(text) {
+      const ticker = document.getElementById('active-text');
+      // Resetear animación para reiniciar el scroll
+      ticker.style.animation = 'none';
+      ticker.offsetHeight; // Truco de reflow
+      ticker.textContent = text;
+      ticker.style.animation = 'marquee 20s linear infinite';
+    }
+
+    // Resetear componentes de la pantalla
+    function resetScreen() {
+      document.getElementById('active-slide').src = '';
+      document.getElementById('active-slide').classList.remove('loaded');
+      document.getElementById('placeholder-box').style.display = 'flex';
+      document.getElementById('placeholder-box').style.opacity = '1';
+      document.getElementById('campaign-title').textContent = 'Sin Pauta Comercial';
+      document.getElementById('campaign-client').textContent = 'Estación Local';
+      document.getElementById('timer-countdown').textContent = '0s';
+      document.getElementById('timer-progress').style.width = '0%';
+      document.getElementById('active-text').textContent = 'Sintonizando emisora híbrida - Geolocalizada por RadioDNS...';
+    }
+
+    // Poll del estado real de la campaña para sincronizar metadatos y cronómetro
+    async function pollActiveCampaignStatus(serviceId) {
+      try {
+        const response = await fetch(`http://localhost:3000/ad-trigger/status/${serviceId}`);
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const region = document.getElementById('info-region').textContent.toLowerCase();
+
+        // Buscar el estado correspondiente a la región seleccionada
+        const regionStatus = data.regions.find(r => r.region === region);
+
+        if (regionStatus && regionStatus.playing && regionStatus.details) {
+          const details = regionStatus.details;
+          document.getElementById('campaign-title').textContent = details.campaniaNombre;
+          document.getElementById('campaign-client').textContent = details.clienteNombre;
+
+          // Sincronizar temporizador
+          const startedAt = new Date(details.startedAt).getTime();
+          const durationMs = details.duration * 1000;
+          const elapsedMs = Date.now() - startedAt;
+          
+          timerTotal = details.duration;
+          timerRemaining = Math.max(0, Math.ceil((durationMs - elapsedMs) / 1000));
+
+          if (timerRemaining > 0) {
+            startCountdown();
+          } else {
+            clearCountdown();
+          }
+        } else {
+          // No hay campaña activa o ya expiró
+          if (document.getElementById('campaign-title').textContent !== 'Sin Pauta Comercial') {
+            addLog('La pauta comercial ha finalizado.', 'info');
+            resetScreen();
+          }
+        }
+      } catch (err) {
+        console.error('Error polling status:', err);
+      }
+    }
+
+    // Iniciar cuenta regresiva local
+    function startCountdown() {
+      clearInterval(countdownInterval);
+      
+      const updateProgressBar = () => {
+        if (timerRemaining <= 0) {
+          clearInterval(countdownInterval);
+          resetScreen();
+          return;
+        }
+
+        document.getElementById('timer-countdown').textContent = `${timerRemaining}s`;
+        const percentage = (timerRemaining / timerTotal) * 100;
+        document.getElementById('timer-progress').style.width = `${percentage}%`;
+        timerRemaining--;
+      };
+
+      updateProgressBar();
+      countdownInterval = setInterval(updateProgressBar, 1000);
+    }
+
+    function clearCountdown() {
+      clearInterval(countdownInterval);
+      document.getElementById('timer-countdown').textContent = '0s';
+      document.getElementById('timer-progress').style.width = '0%';
+    }
+  </script>
+</body>
+</html>

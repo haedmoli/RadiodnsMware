@@ -1,0 +1,85 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Cliente {
+  id        String     @id @default(uuid())
+  nombre    String
+  email     String?
+  campanias Campania[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Campania {
+  id               String           @id @default(uuid())
+  nombre           String
+  clienteId        String
+  cliente          Cliente          @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  triggerKey       String
+  fechaInicio      DateTime
+  fechaFin         DateTime
+  activo           Boolean          @default(true)
+  creatividades    Creatividad[]
+  campaniaRegiones CampaniaRegion[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+enum TipoCreatividad {
+  SLIDE
+  TEXT
+}
+
+model Creatividad {
+  id         String          @id @default(uuid())
+  campaniaId String
+  campania   Campania        @relation(fields: [campaniaId], references: [id], onDelete: Cascade)
+  tipo       TipoCreatividad
+  urlImagen  String? // Requerido si tipo es SLIDE
+  texto      String? // Requerido si tipo es TEXT
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+}
+
+model Region {
+  id               String           @id @default(uuid())
+  nombre           String           @unique // e.g., "bogota", "medellin", "nacional"
+  codigo           String           @unique // e.g., "BOG", "MDE", "NAC"
+  campaniaRegiones CampaniaRegion[]
+  mapeosTopic      MapeoRegionTopic[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model MapeoRegionTopic {
+  id         String   @id @default(uuid())
+  regionId   String
+  region     Region   @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  topicImage String // e.g., "radio/region/bogota/image"
+  topicText  String // e.g., "radio/region/bogota/text"
+  esFallback Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model CampaniaRegion {
+  id         String   @id @default(uuid())
+  campaniaId String
+  campania   Campania @relation(fields: [campaniaId], references: [id], onDelete: Cascade)
+  regionId   String
+  region     Region   @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([campaniaId, regionId])
+}
