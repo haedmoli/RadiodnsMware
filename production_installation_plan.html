@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plan de Instalación en Producción - RadioDNS Middleware</title>
+  <!-- Google Fonts: Outfit & Space Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Space+Mono&display=swap" rel="stylesheet">
+  <!-- Mermaid.js for Diagram Rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      securityLevel: 'loose'
+    });
+  </script>
+
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: rgba(30, 41, 59, 0.45);
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --code-bg: #020617;
+      --alert-bg: rgba(99, 102, 241, 0.1);
+      --alert-border: #6366f1;
+    }
+
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: rgba(0, 0, 0, 0.08);
+      --text: #0f172a;
+      --text-muted: #475569;
+      --primary: #4f46e5;
+      --primary-hover: #3730a3;
+      --success: #059669;
+      --warning: #d97706;
+      --code-bg: #f1f5f9;
+      --alert-bg: rgba(79, 70, 229, 0.05);
+      --alert-border: #4f46e5;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 2rem 1rem;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 1.5rem;
+      }
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      background: linear-gradient(to right, #818cf8, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .theme-toggle {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: background-color 0.2s;
+    }
+
+    .theme-toggle:hover {
+      background: var(--primary-hover);
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      border-left: 4px solid var(--primary);
+      padding-left: 0.75rem;
+      color: var(--text);
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-top: 1.5rem;
+      margin-bottom: 0.75rem;
+      color: var(--text);
+    }
+
+    p {
+      margin-bottom: 1.25rem;
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    ul, ol {
+      margin-left: 1.5rem;
+      margin-bottom: 1.5rem;
+      color: var(--text-muted);
+    }
+
+    li {
+      margin-bottom: 0.5rem;
+    }
+
+    strong {
+      color: var(--text);
+    }
+
+    /* Diagram Center styling */
+    .diagram-container {
+      background: rgba(15, 23, 42, 0.3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      overflow-x: auto;
+    }
+
+    /* Code Block Styling */
+    .code-wrapper {
+      position: relative;
+      margin-bottom: 2rem;
+    }
+
+    pre {
+      background-color: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      overflow-x: auto;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    [data-theme="light"] pre {
+      color: #0f172a;
+    }
+
+    code {
+      font-family: 'Space Mono', monospace;
+      color: var(--primary);
+      background: rgba(99, 102, 241, 0.1);
+      padding: 0.15rem 0.35rem;
+      border-radius: 4px;
+      font-size: 0.85em;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      color: inherit;
+      font-size: inherit;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.3rem 0.7rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* Alert Boxes */
+    .alert {
+      background-color: var(--alert-bg);
+      border-left: 4px solid var(--alert-border);
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .alert p {
+      margin: 0;
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .alert-success {
+      --alert-bg: rgba(16, 185, 129, 0.1);
+      --alert-border: var(--success);
+    }
+
+    .alert-warning {
+      --alert-bg: rgba(245, 158, 11, 0.1);
+      --alert-border: var(--warning);
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Plan de Instalación en Producción</h1>
+      <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()">Modo Claro</button>
+    </header>
+
+    <p>Este documento describe la arquitectura, configuración y pasos requeridos para desplegar el middleware en un entorno de producción (AWS / Nube) utilizando <strong>Amazon MQ (ActiveMQ)</strong> y <strong>Amazon RDS (PostgreSQL)</strong>.</p>
+
+    <!-- Sección 1 -->
+    <h2>1. Arquitectura de Producción</h2>
+    <p>El siguiente diagrama ilustra el flujo de red e integración entre los sistemas:</p>
+
+    <div class="diagram-container">
+      <div class="mermaid">
+        graph TD
+            %% Playout Ingest
+            AzuraCast[AzuraCast Playout] -->|Webhook POST /ad-trigger/azuracast| API[NestJS Middleware API]
+            
+            %% Storage
+            API -->|Read/Write| DB[(AWS RDS PostgreSQL)]
+            API -->|Caching & Real-Time Status| Cache[(AWS ElastiCache Redis)]
+
+            %% Publishers
+            API -->|1. WebSockets MQTT| Mosquitto[Mosquitto Broker]
+            API -->|2. STOMP SSL port 61614| AmazonMQ[Amazon MQ - ActiveMQ]
+
+            %% Subscribers
+            WebVisualizer[HTML5 Visualizer] -->|ws://localhost:9001| Mosquitto
+            
+            %% Standard RadioVIS Flow (Anonymous Connect)
+            RadioVISReceiver[RadioVIS Receivers] -->|No Credentials| Proxy[STOMP Proxy / Gateway]
+            Proxy -->|Inject Read-Only Credentials| AmazonMQ
+      </div>
+    </div>
+
+    <!-- Sección 2 -->
+    <h2>2. Variables de Entorno de Producción (.env)</h2>
+    <p>En producción, estas variables se deben inyectar directamente en el servicio contenedor (por ejemplo, en las definiciones de tareas de <strong>AWS ECS Fargate</strong> o Secrets de Kubernetes) en lugar de usar un archivo local:</p>
+
+    <div class="code-wrapper">
+      <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+      <pre><code># Puerto del Servidor NestJS
+PORT=3000
+
+# Base de datos (AWS RDS PostgreSQL)
+DATABASE_URL="postgresql://db_user:secure_password@rds-instance-endpoint.rds.amazonaws.com:5432/rdns_db?schema=public&sslmode=require"
+
+# Caché (AWS ElastiCache Redis)
+REDIS_HOST="elasticache-redis-cluster-endpoint.cache.amazonaws.com"
+REDIS_PORT=6379
+
+# Servidor MQTT Propietario (Visualizador Regional)
+MQTT_HOST="mqtt.midominio.com"
+MQTT_PORT=1883
+MQTT_WS_PORT=9001
+
+# MaxMind GeoIP Database Path
+GEOIP_DB_PATH="/usr/src/app/src/geoip/GeoLite2-City.mmdb"
+
+# JWT y Seguridad Admin
+JWT_SECRET="Llave_Segura_Y_Compleja_Generada_En_Produccion_256bits"
+ADMIN_USER="superadmin"
+ADMIN_PASSWORD="Password_Altamente_Seguro_Admin"
+
+# --- Amazon MQ / ActiveMQ STOMP ---
+STOMP_HOST="b-12345-endpoint.mq.us-east-1.amazonaws.com"
+STOMP_PORT=61614
+STOMP_USE_TLS=true
+STOMP_USER="middleware_admin"
+STOMP_PASSWORD="Password_Middleware_ActiveMQ"</code></pre>
+    </div>
+
+    <!-- Sección 3 -->
+    <h2>3. Configuración de Seguridad en Amazon MQ (ActiveMQ)</h2>
+    
+    <h3>A. Definición de Usuarios en la Consola AWS</h3>
+    <p>Crea dos usuarios de ActiveMQ en tu configuración de Amazon MQ dentro de la consola de AWS:</p>
+    <ul>
+      <li><strong><code>middleware_admin</code> (Escritura):</strong> Utilizado por tu backend NestJS para publicar los frames <code>SEND</code>.</li>
+      <li><strong><code>radiovis_guest</code> (Lectura):</strong> Utilizado únicamente por los receptores RadioVIS (a través del STOMP Gateway).</li>
+    </ul>
+
+    <h3>B. Configuración de ACLs en activemq.xml</h3>
+    <p>Para restringir que solo tu middleware publique y que los usuarios generales solo lean, aplica el plugin de autorización en la configuración del broker de Amazon MQ:</p>
+
+    <div class="code-wrapper">
+      <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+      <pre><code>&lt;plugins&gt;
+  &lt;authorizationPlugin&gt;
+    &lt;map&gt;
+      &lt;authorizationMap&gt;
+        &lt;authorizationEntries&gt;
+          &lt;!-- 
+            - read: Solo el rol de invitados y administradores leen de los tópicos
+            - write: Únicamente el middleware admin publica
+            - admin: Permiso exclusivo de administración para el middleware admin
+          --&gt;
+          &lt;authorizationEntry topic="/topic/&gt;" read="guests,admins" write="admins" admin="admins" /&gt;
+          
+          &lt;!-- Tópicos de advisory necesarios para la negociación de clientes STOMP --&gt;
+          &lt;authorizationEntry topic="ActiveMQ.Advisory.&gt;" read="guests,admins" write="guests,admins" admin="guests,admins" /&gt;
+        &lt;/authorizationEntries&gt;
+      &lt;/authorizationMap&gt;
+    &lt;/map&gt;
+  &lt;/authorizationPlugin&gt;
+&lt;/plugins&gt;</code></pre>
+    </div>
+
+    <!-- Sección 4 -->
+    <h2>4. Despliegue del STOMP Gateway / Proxy (Conectividad Anónima)</h2>
+    <div class="alert alert-warning">
+      <p>⚠️ <strong>Requisito Crítico:</strong> Para cumplir con la especificación de RadioVIS, que requiere conexión sin autenticación, y saltarse la restricción de Amazon MQ (que obliga a autenticar), se despliega una pasarela en Node.js que inyecta las credenciales dinámicamente.</p>
+    </div>
+
+    <p>Este Gateway STOMP ligero se ejecuta públicamente para capturar y reescribir los frames de conexión antes de canalizarlos hacia el TLS de Amazon MQ:</p>
+
+    <div class="code-wrapper">
+      <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+      <pre><code>const net = require('net');
+const tls = require('tls');
+
+const PUBLIC_PORT = 61613; // Puerto expuesto públicamente
+const AMAZON_MQ_HOST = 'b-12345-endpoint.mq.us-east-1.amazonaws.com';
+const AMAZON_MQ_PORT = 61614; // STOMP + SSL
+const GUEST_USER = 'radiovis_guest';
+const GUEST_PASS = 'Password_De_Lectura';
+
+net.createServer((socket) => {
+  let mqSocket = null;
+  let bufferQueue = [];
+
+  // Conectar con Amazon MQ mediante TLS seguro
+  mqSocket = tls.connect(AMAZON_MQ_PORT, AMAZON_MQ_HOST, { rejectUnauthorized: true }, () => {
+    bufferQueue.forEach(chunk => mqSocket.write(chunk));
+    bufferQueue = [];
+  });
+
+  socket.on('data', (chunk) => {
+    let dataStr = chunk.toString();
+    
+    // Interceptar frame CONNECT para inyectar credenciales de lectura
+    if (dataStr.startsWith('CONNECT\n') || dataStr.startsWith('CONNECT\r\n')) {
+      const headers = `login:${GUEST_USER}\npasscode:${GUEST_PASS}\n`;
+      dataStr = dataStr.replace(/(CONNECT\r?\n)/, `$1${headers}`);
+      chunk = Buffer.from(dataStr);
+    }
+
+    if (mqSocket && mqSocket.writable) {
+      mqSocket.write(chunk);
+    } else {
+      bufferQueue.push(chunk);
+    }
+  });
+
+  mqSocket.on('data', (chunk) => {
+    socket.write(chunk);
+  });
+
+  socket.on('close', () => mqSocket.destroy());
+  mqSocket.on('close', () => socket.destroy());
+}).listen(PUBLIC_PORT, () => {
+  console.log(`STOMP Anonymous Gateway corriendo en puerto ${PUBLIC_PORT}`);
+});</code></pre>
+    </div>
+
+    <!-- Sección 5 -->
+    <h2>5. Pasos de Despliegue del Backend</h2>
+    <ol>
+      <li>
+        <strong>Preparar Infraestructura AWS:</strong>
+        <p>Crear base de datos RDS PostgreSQL, clúster ElastiCache Redis, y broker de Amazon MQ ActiveMQ.</p>
+      </li>
+      <li>
+        <strong>Construir y Subir Imagen Docker:</strong>
+        <p>Construir la imagen de producción en base al Dockerfile actual y subirla al registro privado <strong>AWS ECR</strong>.</p>
+      </li>
+      <li>
+        <strong>Ejecutar Migraciones de Base de Datos:</strong>
+        <p>Antes de arrancar la API, ejecuta las migraciones acumuladas contra el RDS de producción:</p>
+        <code>npx prisma migrate deploy</code>
+      </li>
+      <li>
+        <strong>Ejecutar Seeding:</strong>
+        <p>Poblar la base de datos de producción con los registros de regiones iniciales:</p>
+        <code>npx prisma db seed</code>
+      </li>
+      <li>
+        <strong>Desplegar Servicio ECS Fargate:</strong>
+        <p>Crear el servicio ECS Fargate con la imagen de ECR, asociándole un Application Load Balancer (ALB) y configurando certificados SSL con AWS Certificate Manager (ACM) para servir los endpoints HTTPS.</p>
+      </li>
+    </ol>
+
+    <footer>
+      RadioDNS Middleware - Visualizador de Pauta Segmentada &copy; 2026
+    </footer>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const body = document.body;
+      const btn = document.getElementById('theme-btn');
+      if (body.hasAttribute('data-theme')) {
+        body.removeAttribute('data-theme');
+        btn.textContent = 'Modo Claro';
+      } else {
+        body.setAttribute('data-theme', 'light');
+        btn.textContent = 'Modo Oscuro';
+      }
+    }
+
+    function copyCode(btn) {
+      const pre = btn.nextElementSibling;
+      const code = pre.querySelector('code');
+      navigator.clipboard.writeText(code.textContent).then(() => {
+        btn.textContent = '¡Copiado!';
+        setTimeout(() => {
+          btn.textContent = 'Copiar';
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>
