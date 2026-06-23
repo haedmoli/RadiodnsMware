@@ -64,6 +64,16 @@ services:
       - postgres
       - redis
       - mosquitto
+      - activemq
+
+  activemq:
+    image: rmohr/activemq:5.15.9
+    container_name: rdns_activemq
+    restart: always
+    ports:
+      - "61613:61613" # STOMP
+      - "61616:61616" # OpenWire
+      - "8161:8161"   # Web Console
 
 volumes:
   postgres_data:
