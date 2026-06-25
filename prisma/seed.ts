@@ -76,92 +76,99 @@ async function main() {
   const fechaInicio = new Date(Date.now() - unDia);
   const fechaFin = new Date(Date.now() + 10 * unDia);
 
-  // Campaña 1: Bogotá (Carulla)
-  const campaniaBogota = await prisma.campania.create({
-    data: {
-      nombre: 'Carulla Bogotá Descuentos',
-      clienteId: clienteCarulla.id,
-      triggerKey: 'comercial_bloque_1',
-      fechaInicio,
-      fechaFin,
-      activo: true,
-      creatividades: {
-        create: [
-          {
-            tipo: TipoCreatividad.SLIDE,
-            urlImagen: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80',
-          },
-          {
-            tipo: TipoCreatividad.TEXT,
-            texto: '¡30% de descuento en vinos hoy en Carulla Bogotá!',
-          },
-        ],
-      },
-      campaniaRegiones: {
-        create: {
-          regionId: regionBogota.id,
-        },
-      },
+  const bloques = [
+    {
+      num: 1,
+      bogota: { nombre: 'Carulla Bogotá Descuentos B1', img: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80', txt: '¡30% de descuento en vinos hoy en Carulla Bogotá!' },
+      medellin: { nombre: 'Éxito Medellín Ofertas B1', img: 'https://images.unsplash.com/photo-1573164713988-8665fc963095?w=800&q=80', txt: '¡Descuentos exclusivos en tecnología en Éxito Medellín!' },
+      nacional: { nombre: 'Campaña Institucional Nacional B1', img: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80', txt: 'Escuchas la emisora oficial de Colombia - Radio Híbrida' },
     },
-  });
+    {
+      num: 2,
+      bogota: { nombre: 'Carulla Bogotá Descuentos B2', img: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80', txt: '¡2x1 en toda la categoría de quesos madurados en Carulla Bogotá!' },
+      medellin: { nombre: 'Éxito Medellín Ofertas B2', img: 'https://images.unsplash.com/photo-1573164713988-8665fc963095?w=800&q=80', txt: '¡20% de devolución en tarjeta Éxito en electrohogar Medellín!' },
+      nacional: { nombre: 'Campaña Institucional Nacional B2', img: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80', txt: 'Radio Híbrida: La mejor música e información nacional' },
+    },
+    {
+      num: 3,
+      bogota: { nombre: 'Carulla Bogotá Descuentos B3', img: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80', txt: '¡Frescura garantizada! 40% de descuento en frutas y verduras Carulla BOG!' },
+      medellin: { nombre: 'Éxito Medellín Ofertas B3', img: 'https://images.unsplash.com/photo-1573164713988-8665fc963095?w=800&q=80', txt: '¡30% de descuento en ropa deportiva de la marca Bronzini Medellín!' },
+      nacional: { nombre: 'Campaña Institucional Nacional B3', img: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80', txt: 'Sintoniza con las regiones desde cualquier parte del país' },
+    },
+    {
+      num: 4,
+      bogota: { nombre: 'Carulla Bogotá Descuentos B4', img: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80', txt: '¡Super jueves! 15% de descuento adicional con tarjeta Carulla BOG!' },
+      medellin: { nombre: 'Éxito Medellín Ofertas B4', img: 'https://images.unsplash.com/photo-1573164713988-8665fc963095?w=800&q=80', txt: '¡Renueva tu colchón con hasta 50% de descuento en Éxito Medellín!' },
+      nacional: { nombre: 'Campaña Institucional Nacional B4', img: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80', txt: 'Radio Híbrida: Una sola señal, todo un país conectado' },
+    },
+  ];
 
-  // Campaña 2: Medellín (Éxito)
-  const campaniaMedellin = await prisma.campania.create({
-    data: {
-      nombre: 'Éxito Medellín Ofertas',
-      clienteId: clienteExito.id,
-      triggerKey: 'comercial_bloque_1',
-      fechaInicio,
-      fechaFin,
-      activo: true,
-      creatividades: {
-        create: [
-          {
-            tipo: TipoCreatividad.SLIDE,
-            urlImagen: 'https://images.unsplash.com/photo-1573164713988-8665fc963095?w=800&q=80',
-          },
-          {
-            tipo: TipoCreatividad.TEXT,
-            texto: '¡Descuentos exclusivos en tecnología en Éxito Medellín!',
-          },
-        ],
-      },
-      campaniaRegiones: {
-        create: {
-          regionId: regionMedellin.id,
-        },
-      },
-    },
-  });
+  for (const b of bloques) {
+    const triggerKey = `comercial_bloque_${b.num}`;
 
-  // Campaña 3: Nacional Fallback (Institucional)
-  const campaniaNacional = await prisma.campania.create({
-    data: {
-      nombre: 'Campaña Institucional Nacional',
-      clienteId: clienteExito.id,
-      triggerKey: 'comercial_bloque_1',
-      fechaInicio,
-      fechaFin,
-      activo: true,
-      creatividades: {
-        create: [
-          {
-            tipo: TipoCreatividad.SLIDE,
-            urlImagen: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80',
-          },
-          {
-            tipo: TipoCreatividad.TEXT,
-            texto: 'Escuchas la emisora oficial de Colombia - Radio Híbrida',
-          },
-        ],
-      },
-      campaniaRegiones: {
-        create: {
-          regionId: regionNacional.id,
+    // Bogotá
+    await prisma.campania.create({
+      data: {
+        nombre: b.bogota.nombre,
+        clienteId: clienteCarulla.id,
+        triggerKey,
+        fechaInicio,
+        fechaFin,
+        activo: true,
+        creatividades: {
+          create: [
+            { tipo: TipoCreatividad.SLIDE, urlImagen: b.bogota.img },
+            { tipo: TipoCreatividad.TEXT, texto: b.bogota.txt },
+          ],
+        },
+        campaniaRegiones: {
+          create: { regionId: regionBogota.id },
         },
       },
-    },
-  });
+    });
+
+    // Medellín
+    await prisma.campania.create({
+      data: {
+        nombre: b.medellin.nombre,
+        clienteId: clienteExito.id,
+        triggerKey,
+        fechaInicio,
+        fechaFin,
+        activo: true,
+        creatividades: {
+          create: [
+            { tipo: TipoCreatividad.SLIDE, urlImagen: b.medellin.img },
+            { tipo: TipoCreatividad.TEXT, texto: b.medellin.txt },
+          ],
+        },
+        campaniaRegiones: {
+          create: { regionId: regionMedellin.id },
+        },
+      },
+    });
+
+    // Nacional
+    await prisma.campania.create({
+      data: {
+        nombre: b.nacional.nombre,
+        clienteId: clienteExito.id,
+        triggerKey,
+        fechaInicio,
+        fechaFin,
+        activo: true,
+        creatividades: {
+          create: [
+            { tipo: TipoCreatividad.SLIDE, urlImagen: b.nacional.img },
+            { tipo: TipoCreatividad.TEXT, texto: b.nacional.txt },
+          ],
+        },
+        campaniaRegiones: {
+          create: { regionId: regionNacional.id },
+        },
+      },
+    });
+  }
 
   console.log('Campañas y creatividades creadas con éxito.');
   console.log('Poblamiento finalizado.');
