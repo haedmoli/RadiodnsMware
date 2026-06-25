@@ -72,6 +72,7 @@ services:
     restart: always
     ports:
       - "61613:61613" # STOMP
+      - "61614:61614" # STOMP WebSockets
       - "61616:61616" # OpenWire
       - "8161:8161"   # Web Console
 
