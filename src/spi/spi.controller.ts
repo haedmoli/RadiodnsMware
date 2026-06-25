@@ -100,6 +100,19 @@ export class SpiController {
     const mqttPublicHost = this.configService.get<string>('MQTT_PUBLIC_HOST', 'localhost');
     const mqttPublicPort = this.configService.get<number>('MQTT_PUBLIC_PORT', 1883);
 
+    const bearer = process.env[`BEARER_${serviceId}`] || 
+                   process.env[`BEARER_${serviceId.toUpperCase()}`] || 
+                   process.env[`BEARER_${serviceId.toLowerCase()}`];
+
+    let stompLinkXml = '';
+    if (bearer) {
+      const stompPublicHost = this.configService.get<string>('STOMP_PUBLIC_HOST', 'localhost');
+      const stompPublicPort = this.configService.get<number>('STOMP_PUBLIC_PORT', 61613);
+      // fm:2a3.2016.10540 -> 2a3/2016
+      const bearerPath = bearer.replace('fm:', '').split('.').slice(0, 2).join('/');
+      stompLinkXml = `\n      <!-- Enlace RadioVIS nacional sobre STOMP -->\n      <link uri="stomp://${stompPublicHost}:${stompPublicPort}/topic/${bearerPath}" mimeValue="application/x-rt-topic"/>`;
+    }
+
     const xml = `<?xml version="1.0" encoding="utf-8"?>
 <serviceInformation xmlns="http://www.worlddab.org/schemas/spi/31" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <services>
@@ -110,8 +123,8 @@ export class SpiController {
       <mediaDescription>
         <shortDescription>Middleware RadioDNS para pauta geo-segmentada</shortDescription>
       </mediaDescription>
-      <!-- Enlace RadioVIS sobre MQTT -->
-      <link uri="mqtt://${mqttPublicHost}:${mqttPublicPort}/${topicPrefix}" mimeValue="application/x-rt-topic"/>
+      <!-- Enlace RadioVIS regionalizado sobre MQTT -->
+      <link uri="mqtt://${mqttPublicHost}:${mqttPublicPort}/${topicPrefix}" mimeValue="application/x-rt-topic"/>${stompLinkXml}
     </service>
   </services>
 </serviceInformation>`;
