@@ -92,6 +92,32 @@ El middleware incluye lógica específica para soportar el botón de prueba de A
 
 ---
 
+## Configuración de Túneles Públicos (ngrok / Expo)
+
+Si estás probando la aplicación cliente (ej. una app móvil en React Native con Expo) desde internet, debes exponer los puertos de la API y de STOMP usando ngrok:
+
+1. **Túnel para la API:**
+   ```bash
+   ngrok http 3000
+   ```
+2. **Túnel para STOMP WebSockets:**
+   ```bash
+   ngrok http 61614
+   ```
+
+Una vez que obtengas las URLs públicas, actualiza tu archivo `.env`:
+*   Define `STOMP_PUBLIC_HOST` con el subdominio de tu túnel de STOMP (ej: `xxxx-xxxx.ngrok-free.app`).
+*   Define `STOMP_PUBLIC_PORT` en `443` (puerto seguro HTTPS/WSS por defecto de ngrok).
+
+Reinicia el contenedor de la API:
+```bash
+docker restart rdns_api
+```
+
+El XML de SPI que consuma tu aplicación ahora devolverá el enlace correcto para conectarse de forma remota a través de WebSockets Seguros (`wss://`).
+
+---
+
 ## Pruebas y Verificación
 
 ### Verificar STOMP (RadioVIS)
