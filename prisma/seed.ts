@@ -79,27 +79,27 @@ async function main() {
   const bloques = [
     {
       num: 1,
-      bogota: { nombre: 'Carulla Bogotá Descuentos B1', img: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80', txt: '¡30% de descuento en vinos hoy en Carulla Bogotá!' },
+      bogota: { nombre: 'Carulla Bogotá Descuentos B1', img: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=800&q=80', txt: '¡30% de descuento en vinos hoy en Carulla Bogotá!' },
       medellin: { nombre: 'Éxito Medellín Ofertas B1', img: 'https://images.unsplash.com/photo-1573164713988-8665fc963095?w=800&q=80', txt: '¡Descuentos exclusivos en tecnología en Éxito Medellín!' },
       nacional: { nombre: 'Campaña Institucional Nacional B1', img: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80', txt: 'Escuchas la emisora oficial de Colombia - Radio Híbrida' },
     },
     {
       num: 2,
-      bogota: { nombre: 'Carulla Bogotá Descuentos B2', img: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80', txt: '¡2x1 en toda la categoría de quesos madurados en Carulla Bogotá!' },
-      medellin: { nombre: 'Éxito Medellín Ofertas B2', img: 'https://images.unsplash.com/photo-1573164713988-8665fc963095?w=800&q=80', txt: '¡20% de devolución en tarjeta Éxito en electrohogar Medellín!' },
-      nacional: { nombre: 'Campaña Institucional Nacional B2', img: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80', txt: 'Radio Híbrida: La mejor música e información nacional' },
+      bogota: { nombre: 'Carulla Bogotá Descuentos B2', img: 'https://images.unsplash.com/photo-1486299267070-83823f5448dd?w=800&q=80', txt: '¡2x1 en toda la categoría de quesos madurados en Carulla Bogotá!' },
+      medellin: { nombre: 'Éxito Medellín Ofertas B2', img: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800&q=80', txt: '¡20% de devolución en tarjeta Éxito en electrohogar Medellín!' },
+      nacional: { nombre: 'Campaña Institucional Nacional B2', img: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800&q=80', txt: 'Radio Híbrida: La mejor música e información nacional' },
     },
     {
       num: 3,
       bogota: { nombre: 'Carulla Bogotá Descuentos B3', img: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80', txt: '¡Frescura garantizada! 40% de descuento en frutas y verduras Carulla BOG!' },
-      medellin: { nombre: 'Éxito Medellín Ofertas B3', img: 'https://images.unsplash.com/photo-1573164713988-8665fc963095?w=800&q=80', txt: '¡30% de descuento en ropa deportiva de la marca Bronzini Medellín!' },
-      nacional: { nombre: 'Campaña Institucional Nacional B3', img: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80', txt: 'Sintoniza con las regiones desde cualquier parte del país' },
+      medellin: { nombre: 'Éxito Medellín Ofertas B3', img: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800&q=80', txt: '¡30% de descuento en ropa deportiva de la marca Bronzini Medellín!' },
+      nacional: { nombre: 'Campaña Institucional Nacional B3', img: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&q=80', txt: 'Sintoniza con las regiones desde cualquier parte del país' },
     },
     {
       num: 4,
-      bogota: { nombre: 'Carulla Bogotá Descuentos B4', img: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80', txt: '¡Super jueves! 15% de descuento adicional con tarjeta Carulla BOG!' },
-      medellin: { nombre: 'Éxito Medellín Ofertas B4', img: 'https://images.unsplash.com/photo-1573164713988-8665fc963095?w=800&q=80', txt: '¡Renueva tu colchón con hasta 50% de descuento en Éxito Medellín!' },
-      nacional: { nombre: 'Campaña Institucional Nacional B4', img: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80', txt: 'Radio Híbrida: Una sola señal, todo un país conectado' },
+      bogota: { nombre: 'Carulla Bogotá Descuentos B4', img: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=800&q=80', txt: '¡Super jueves! 15% de descuento adicional con tarjeta Carulla BOG!' },
+      medellin: { nombre: 'Éxito Medellín Ofertas B4', img: 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=800&q=80', txt: '¡Renueva tu colchón con hasta 50% de descuento en Éxito Medellín!' },
+      nacional: { nombre: 'Campaña Institucional Nacional B4', img: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&q=80', txt: 'Radio Híbrida: Una sola señal, todo un país conectado' },
     },
   ];
 
