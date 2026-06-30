@@ -4,12 +4,18 @@ import * as mqtt from 'mqtt';
 
 @Injectable()
 export class MqttService implements OnModuleInit, OnModuleDestroy {
-  private client: mqtt.MqttClient;
+  private client: mqtt.MqttClient | null = null;
   private readonly logger = new Logger(MqttService.name);
 
   constructor(private readonly configService: ConfigService) {}
 
   onModuleInit() {
+    const enabled = this.configService.get<string>('MQTT_ENABLED', 'true') !== 'false';
+    if (!enabled) {
+      this.logger.log('MQTT está desactivado por configuración (.env).');
+      return;
+    }
+
     const host = this.configService.get<string>('MQTT_HOST', 'localhost');
     const port = this.configService.get<number>('MQTT_PORT', 1883);
 
@@ -27,6 +33,10 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
 
   publish(topic: string, payload: string, retain = true): Promise<void> {
     return new Promise((resolve, reject) => {
+      if (!this.client) {
+        resolve();
+        return;
+      }
       this.client.publish(topic, payload, { qos: 1, retain }, (error) => {
         if (error) {
           this.logger.error(`Error publicando en topic ${topic}: ${error.message}`);

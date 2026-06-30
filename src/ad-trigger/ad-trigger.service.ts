@@ -128,8 +128,8 @@ export class AdTriggerService {
           continue;
         }
 
-        // Si la región es 'nacional' y se suministró un bearer, publicar en paralelo a ActiveMQ (RadioVIS)
-        if (region.nombre === 'nacional' && event.bearer) {
+        // Publicar en paralelo a ActiveMQ (RadioVIS) si se suministró un bearer
+        if (event.bearer) {
           this.radioVisService.publish(event.bearer, campaignInfo.creatividades)
             .catch(err => this.logger.error(`Error al publicar en STOMP/RadioVIS: ${err.message}`));
         }
