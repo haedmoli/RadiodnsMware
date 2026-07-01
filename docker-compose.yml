@@ -58,6 +58,7 @@ services:
       - STOMP_USE_TLS=${STOMP_USE_TLS:-false}
       - STOMP_USER=${STOMP_USER:-admin}
       - STOMP_PASSWORD=${STOMP_PASSWORD:-adminpassword}
+      - DEFAULT_RADIOVIS_REGION=${DEFAULT_RADIOVIS_REGION:-nacional}
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
