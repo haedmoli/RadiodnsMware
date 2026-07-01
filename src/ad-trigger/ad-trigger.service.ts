@@ -111,12 +111,24 @@ export class AdTriggerService {
 
       // 2. Generar mensajes RadioVIS, publicar en MQTT y guardar estado en tiempo real (active_now)
       if (campaignInfo && campaignInfo.creatividades.length > 0) {
+        // Resolver URLs relativas de imágenes a absolutas usando PUBLIC_URL
+        const resolvedCreatividades = campaignInfo.creatividades.map((c) => {
+          if (c.tipo === TipoCreatividad.SLIDE && c.urlImagen && c.urlImagen.startsWith('/')) {
+            const publicUrl = process.env.PUBLIC_URL || `http://localhost:${process.env.PORT || 3000}`;
+            return {
+              ...c,
+              urlImagen: `${publicUrl}${c.urlImagen}`,
+            };
+          }
+          return c;
+        });
+
         // Guardar estado en tiempo real en Redis para el monitor de estado (active_now)
         const activeNowKey = `active_now:${serviceId}:${region.nombre}`;
         const activeNowData = {
           campaniaNombre: campaignInfo.campaniaNombre,
           clienteNombre: campaignInfo.clienteNombre,
-          creatividades: campaignInfo.creatividades,
+          creatividades: resolvedCreatividades,
           startedAt: new Date(),
           duration,
         };
@@ -132,11 +144,11 @@ export class AdTriggerService {
         // Se restringe a la región configurada (default: nacional) para evitar sobreescrituras en el mismo topic STOMP
         const targetRadioVisRegion = process.env.DEFAULT_RADIOVIS_REGION || 'nacional';
         if (event.bearer && region.nombre === targetRadioVisRegion) {
-          this.radioVisService.publish(event.bearer, campaignInfo.creatividades)
+          this.radioVisService.publish(event.bearer, resolvedCreatividades)
             .catch(err => this.logger.error(`Error al publicar en STOMP/RadioVIS: ${err.message}`));
         }
 
-        for (const creatividad of campaignInfo.creatividades) {
+        for (const creatividad of resolvedCreatividades) {
           let topic = '';
           let payload = '';
 
