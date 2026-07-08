@@ -7,4 +7,4 @@ WORKDIR /app
 
 COPY --from=cli /app /app
 
-CMD ["node", "dist/main"]
+CMD ["node", "dist/src/main"]

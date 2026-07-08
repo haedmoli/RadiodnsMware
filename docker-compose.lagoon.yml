@@ -53,6 +53,11 @@ services:
     image: postgres:15-alpine
     labels:
       lagoon.type: postgres
+    environment:
+      # La imagen oficial de postgres no puede inicializar si el punto de
+      # montaje del PVC ya trae contenido (lost+found de fábrica) — hay que
+      # apuntar PGDATA a un subdirectorio, no a la raíz del volumen.
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - db:/var/lib/postgresql/data
 
