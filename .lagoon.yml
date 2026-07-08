@@ -1,0 +1,26 @@
+docker-compose-yaml: docker-compose.lagoon.yml
+
+environment_variables:
+  git_sha: 'true'
+
+tasks:
+  post-rollout:
+    - run:
+        name: prisma migrate deploy
+        command: npx prisma migrate deploy
+        service: cli
+        shell: bash
+
+routes:
+  autogenerate:
+    enabled: true
+    insecure: Redirect
+
+backup-schedule:
+  production: "M H(22-2) * * *"
+
+backup-retention:
+  production:
+    daily: 7
+    weekly: 4
+    monthly: 1

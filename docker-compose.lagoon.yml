@@ -1,0 +1,62 @@
+x-volumes:
+  &default-volumes
+    volumes:
+      - .:/app:delegated
+
+volumes:
+  db: {}
+
+services:
+
+  cli:
+    build:
+      context: .
+      dockerfile: lagoon/cli.dockerfile
+    image: &cli-image stomp-middleware-cli
+    labels:
+      lagoon.type: cli-persistent
+      lagoon.persistent.name: api
+      lagoon.persistent: /app/uploads
+    << : *default-volumes
+    user: root
+
+  api:
+    build:
+      context: .
+      dockerfile: lagoon/api.dockerfile
+      args:
+        CLI_IMAGE: *cli-image
+      additional_contexts:
+        cli: 'service:cli'
+    labels:
+      lagoon.type: node-persistent
+      lagoon.persistent: /app/uploads
+    environment:
+      # No-secretos: hostnames/puertos internos y flags. Passwords/JWT_SECRET/
+      # credenciales van como variables runtime de Lagoon, no aquí.
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MQTT_ENABLED: "false"
+      GEOIP_DB_PATH: /app/src/geoip/GeoLite2-City.mmdb
+      # Broker externo Amazon MQ (RadioHibrida, ActiveMQ 5.19, ACTIVE_STANDBY_MULTI_AZ)
+      # — no se despliega ActiveMQ en Lagoon. Solo STOMP+TLS en 61614 (Amazon MQ no
+      # expone el 61613 sin TLS que usa docker-compose.yml local).
+      STOMP_HOST: b-2c18e545-c663-41a3-acc4-aef8db0d8938-1.mq.us-east-2.amazonaws.com
+      STOMP_PORT: "61614"
+      STOMP_USE_TLS: "true"
+    depends_on:
+      - cli
+
+  # meta-type: dbaas-operator decide single vs dbaas — seedcloud no tiene DBaaS
+  # de Postgres (solo MariaDB), así que esto se resuelve a postgres-single.
+  postgres:
+    image: postgres:15-alpine
+    labels:
+      lagoon.type: postgres
+    volumes:
+      - db:/var/lib/postgresql/data
+
+  redis:
+    image: uselagoon/redis-7:26.6.0
+    labels:
+      lagoon.type: redis
