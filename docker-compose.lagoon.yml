@@ -31,33 +31,25 @@ services:
     labels:
       lagoon.type: node-persistent
       lagoon.persistent: /app/uploads
-    environment:
-      # No-secretos: hostnames/puertos internos y flags. Passwords/JWT_SECRET/
-      # credenciales van como variables runtime de Lagoon, no aquí.
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      MQTT_ENABLED: "false"
-      GEOIP_DB_PATH: /app/src/geoip/GeoLite2-City.mmdb
-      # Broker externo Amazon MQ (RadioHibrida, ActiveMQ 5.19, ACTIVE_STANDBY_MULTI_AZ)
-      # — no se despliega ActiveMQ en Lagoon. Solo STOMP+TLS en 61614 (Amazon MQ no
-      # expone el 61613 sin TLS que usa docker-compose.yml local).
-      STOMP_HOST: b-2c18e545-c663-41a3-acc4-aef8db0d8938-1.mq.us-east-2.amazonaws.com
-      STOMP_PORT: "61614"
-      STOMP_USE_TLS: "true"
+    # Lagoon ignora por completo el bloque `environment:` de docker-compose.yml
+    # (solo lee labels, nombres de servicio, imágenes y build) — todas las env
+    # vars de runtime (REDIS_HOST, STOMP_HOST/PORT/TLS, MQTT_ENABLED,
+    # GEOIP_DB_PATH, más los secretos DATABASE_URL/JWT_SECRET/etc.) están
+    # cargadas como variables runtime del proyecto vía `lagoon add variable`,
+    # no aquí. Ver docs.lagoon.sh/concepts-basics/docker-compose-yml.
     depends_on:
       - cli
 
   # meta-type: dbaas-operator decide single vs dbaas — seedcloud no tiene DBaaS
   # de Postgres (solo MariaDB), así que esto se resuelve a postgres-single.
+  # PGDATA (necesario para que la imagen oficial de postgres no choque con el
+  # lost+found de fábrica del punto de montaje del PVC) está como variable
+  # runtime de Lagoon, no aquí — el bloque `environment:` de este archivo se
+  # ignora para el despliegue real.
   postgres:
     image: postgres:15-alpine
     labels:
       lagoon.type: postgres
-    environment:
-      # La imagen oficial de postgres no puede inicializar si el punto de
-      # montaje del PVC ya trae contenido (lost+found de fábrica) — hay que
-      # apuntar PGDATA a un subdirectorio, no a la raíz del volumen.
-      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - db:/var/lib/postgresql/data
 
